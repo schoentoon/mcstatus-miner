@@ -34,8 +34,6 @@ static const struct option g_LongOpts[] = {
   { 0, 0, 0, 0 }
 };
 
-struct event_base* event_base = NULL;
-
 static int usage() {
   fprintf(stderr, "USAGE: scibf [options]\n");
   fprintf(stderr, "-h, --help\t\tShow this help message.\n");

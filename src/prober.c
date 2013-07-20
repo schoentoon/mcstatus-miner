@@ -18,7 +18,63 @@
 #include "prober.h"
 
 #include "debug.h"
+#include "config.h"
+
+#include <ctype.h>
+#include <string.h>
+
+#include <event2/bufferevent.h>
+
+struct server_status {
+  char* version;
+  char* motd;
+  unsigned short numplayers;
+  unsigned short maxplayers;
+};
+
+void readcb(struct bufferevent* conn, void* arg);
+void eventcb(struct bufferevent* conn, short event, void* arg);
 
 void timer_callback(evutil_socket_t fd, short event, void* arg) {
   DEBUG(255, "timer_callback(%d, %d, %p);", fd, event, arg);
+  struct server* server = arg;
+  struct bufferevent* conn = bufferevent_socket_new(event_base, -1, BEV_OPT_CLOSE_ON_FREE);
+  bufferevent_setcb(conn, readcb, NULL, eventcb, arg);
+  bufferevent_socket_connect_hostname(conn, dns, AF_INET, server->hostname, server->port);
+  bufferevent_enable(conn, EV_READ);
+  static const char HEADER[] = { 0xFE, 0x01 };
+  bufferevent_write(conn, HEADER, 2);
+};
+
+void readcb(struct bufferevent* conn, void* arg) {
+  unsigned char buffer[1024];
+  size_t len = bufferevent_read(conn, buffer, sizeof(buffer));
+  if (buffer[0] == 0xFF && len > 16) {
+    struct server_status status;
+    char versionbuf[64];
+    char *v = versionbuf;
+    size_t i;
+    for (i = 16; i < len; i++) {
+      if (i % 2 == 0) {
+        if (!isascii(buffer[i]))
+          goto error;
+        else if (buffer[i] == 0x00) {
+          *(v++) = 0x00;
+          break;
+        } else
+          *(v++) = buffer[i];
+      } else if (buffer[i] != 0x00)
+        goto error;
+    }
+    status.version = versionbuf;
+    DEBUG(255, "Version: %s", status.version);
+  }
+error:
+  eventcb(conn, BEV_FINISHED, arg);
+};
+
+void eventcb(struct bufferevent* conn, short event, void* arg) {
+  if (event & BEV_EVENT_CONNECTED)
+    return;
+  bufferevent_free(conn);
 };

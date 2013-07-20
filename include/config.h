@@ -18,8 +18,13 @@
 #ifndef _CONFIG_H
 #define _CONFIG_H
 
+#include <event2/dns.h>
 #include <event2/event.h>
 #include <event2/event_struct.h>
+
+struct event_base* event_base;
+
+struct evdns_base* dns;
 
 struct server {
   char* hostname;

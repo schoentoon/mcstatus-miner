@@ -24,8 +24,6 @@
 #include <stdlib.h>
 #include <limits.h>
 
-#include <event2/dns.h>
-
 #define DEFAULT_PORT 25565
 #define DEFAULT_INTERVAL 60 /* This is in seconds */
 
@@ -33,7 +31,9 @@ static struct config {
   struct server* servers;
 } global_config;
 
-static struct evdns_base* dns = NULL;
+struct evdns_base* dns = NULL;
+
+struct event_base* event_base = NULL;
 
 int parse_config(char* filename) {
   FILE* f = fopen(filename, "r");
@@ -63,6 +63,7 @@ int parse_config(char* filename) {
         }
         server->port = DEFAULT_PORT;
         server->interval = DEFAULT_INTERVAL;
+        server->hostname = strdup(value);
       } else if (server && strcmp(key, "port") == 0) {
         errno = 0;
         long port = strtol(value, NULL, 10);
