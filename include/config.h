@@ -30,6 +30,7 @@ struct server {
   char* hostname;
   unsigned short port;
   unsigned short interval;
+  char* format;
   struct event* timer;
   struct server* next;
 };

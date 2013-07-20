@@ -64,6 +64,9 @@ int parse_config(char* filename) {
         server->port = DEFAULT_PORT;
         server->interval = DEFAULT_INTERVAL;
         server->hostname = strdup(value);
+      } else if (server && strcmp(key, "format") == 0) {
+        free(server->format);
+        server->format = strdup(value);
       } else if (server && strcmp(key, "port") == 0) {
         errno = 0;
         long port = strtol(value, NULL, 10);

@@ -30,10 +30,13 @@ struct server_status {
   char* motd;
   unsigned short numplayers;
   unsigned short maxplayers;
+  struct server* server;
 };
 
 void readcb(struct bufferevent* conn, void* arg);
 void eventcb(struct bufferevent* conn, short event, void* arg);
+
+int print_status(struct server_status* status, char* format, char* buf, size_t buflen);
 
 void timer_callback(evutil_socket_t fd, short event, void* arg) {
   DEBUG(255, "timer_callback(%d, %d, %p);", fd, event, arg);
@@ -114,6 +117,11 @@ void readcb(struct bufferevent* conn, void* arg) {
         goto error;
     }
     DEBUG(255, "Maximum amount of players: %d", status.maxplayers);
+    struct server* server = arg;
+    status.server = server;
+    char buf[BUFSIZ];
+    print_status(&status, server->format, buf, sizeof(buf));
+    printf("%s\n", buf);
   }
 error:
   eventcb(conn, BEV_FINISHED, arg);
@@ -123,4 +131,40 @@ void eventcb(struct bufferevent* conn, short event, void* arg) {
   if (event & BEV_EVENT_CONNECTED)
     return;
   bufferevent_free(conn);
+};
+
+#define APPEND(/*char* */ str) \
+    while (*str && buf < end) \
+      *buf++ = *str++;
+
+int print_status(struct server_status* status, char* format, char* buf, size_t buflen) {
+  char* s = buf;
+  char* end = s + buflen;
+  char* f;
+  for (f = format; *f != '\0'; f++) {
+    if (*f == '%') {
+      f++;
+      char key[33];
+      if (sscanf(f, "%32[a-z]", key) == 1) {
+        if (strcmp(key, "hostname") == 0) {
+          APPEND(status->server->hostname);
+        } else if (strcmp(key, "version") == 0) {
+          APPEND(status->version);
+        } else if (strcmp(key, "motd") == 0) {
+          APPEND(status->motd);
+        } else if (strcmp(key, "numplayers") == 0) {
+          snprintf(buf, end - buf, "%d", status->numplayers);
+          while (*buf != '\0')
+            buf++;
+        } else if (strcmp(key, "maxplayers") == 0) {
+          snprintf(buf, end - buf, "%d", status->maxplayers);
+          while (*buf != '\0')
+            buf++;
+        }
+      }
+      f += strlen(key) - 1;
+    } else if (buf < end)
+      *buf++ = *f;
+  };
+  return buf - s;
 };
