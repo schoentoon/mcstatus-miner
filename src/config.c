@@ -16,6 +16,7 @@
  */
 
 #include "config.h"
+#include "prober.h"
 
 #include <errno.h>
 #include <stdio.h>
@@ -23,12 +24,16 @@
 #include <stdlib.h>
 #include <limits.h>
 
+#include <event2/dns.h>
+
 #define DEFAULT_PORT 25565
 #define DEFAULT_INTERVAL 60 /* This is in seconds */
 
 static struct config {
   struct server* servers;
 } global_config;
+
+static struct evdns_base* dns = NULL;
 
 int parse_config(char* filename) {
   FILE* f = fopen(filename, "r");
@@ -78,4 +83,17 @@ int parse_config(char* filename) {
     }
   }
   return line_count;
+};
+
+void dispatch_config(struct event_base* base) {
+  dns = evdns_base_new(base, 1);
+  struct server* node = global_config.servers;
+  while (node) {
+    struct timeval tv;
+    tv.tv_sec = node->interval;
+    tv.tv_usec = 0;
+    node->timer = event_new(base, -1, EV_PERSIST, timer_callback, node);
+    event_add(node->timer, &tv);
+    node = node->next;
+  };
 };

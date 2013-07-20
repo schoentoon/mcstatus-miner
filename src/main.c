@@ -70,6 +70,7 @@ int main(int argc, char** argv) {
   }
   if (debug || (fork() == 0)) {
     event_base = event_base_new();
+    dispatch_config(event_base);
     while (1)
       event_base_dispatch(event_base);
   }

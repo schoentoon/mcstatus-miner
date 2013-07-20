@@ -15,22 +15,11 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _CONFIG_H
-#define _CONFIG_H
+#ifndef _PROBER_H
+#define _PROBER_H
 
-#include <event2/event.h>
-#include <event2/event_struct.h>
+#include <event2/util.h>
 
-struct server {
-  char* hostname;
-  unsigned short port;
-  unsigned short interval;
-  struct event* timer;
-  struct server* next;
-};
+void timer_callback(evutil_socket_t fd, short event, void* arg);
 
-int parse_config(char* filename);
-
-void dispatch_config(struct event_base* base);
-
-#endif //_CONFIG_H
+#endif //_PROBER_H
