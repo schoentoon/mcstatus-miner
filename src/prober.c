@@ -84,6 +84,36 @@ void readcb(struct bufferevent* conn, void* arg) {
     }
     status.motd = motdbuf;
     DEBUG(255, "Motd: %s", status.motd);
+    if (buffer[++i] != 0 && buffer[++i] != 0 && buffer[++i] != 0)
+      goto error;
+    status.numplayers = 0;
+    for (; i < len; i++) {
+      if (i % 2 == 0) {
+        if (isdigit(buffer[i]))
+          status.numplayers = (status.numplayers * 10) + (buffer[i] - '0');
+        else if (buffer[i] == 0x00)
+          break;
+        else
+          goto error;
+      } else if (buffer[i] != 0x00)
+        goto error;
+    }
+    DEBUG(255, "Number of online players: %d", status.numplayers);
+    if (buffer[++i] != 0 && buffer[++i] != 0 && buffer[++i] != 0)
+      goto error;
+    status.maxplayers = 0;
+    for (; i < len; i++) {
+      if (i % 2 == 0) {
+        if (isdigit(buffer[i]))
+          status.maxplayers = (status.maxplayers * 10) + (buffer[i] - '0');
+        else if (buffer[i] == 0x00)
+          break;
+        else
+          goto error;
+      } else if (buffer[i] != 0x00)
+        goto error;
+    }
+    DEBUG(255, "Maximum amount of players: %d", status.maxplayers);
   }
 error:
   eventcb(conn, BEV_FINISHED, arg);
