@@ -56,18 +56,34 @@ void readcb(struct bufferevent* conn, void* arg) {
     size_t i;
     for (i = 16; i < len; i++) {
       if (i % 2 == 0) {
-        if (!isascii(buffer[i]))
-          goto error;
-        else if (buffer[i] == 0x00) {
-          *(v++) = 0x00;
-          break;
-        } else
+        if (isascii(buffer[i])) {
           *(v++) = buffer[i];
+          if (buffer[i] == 0x00)
+            break;
+        } else
+          goto error;
       } else if (buffer[i] != 0x00)
         goto error;
     }
     status.version = versionbuf;
     DEBUG(255, "Version: %s", status.version);
+    if (buffer[++i] != 0 && buffer[++i] != 0 && buffer[++i] != 0)
+      goto error;
+    char motdbuf[256];
+    char *m = motdbuf;
+    for (; i < len; i++) {
+      if (i % 2 == 0) {
+        if (isascii(buffer[i])) {
+          *(m++) = buffer[i];
+          if (buffer[i] == 0x00)
+            break;
+        } else
+          goto error;
+      } else if (buffer[i] != 0x00)
+        goto error;
+    }
+    status.motd = motdbuf;
+    DEBUG(255, "Motd: %s", status.motd);
   }
 error:
   eventcb(conn, BEV_FINISHED, arg);
