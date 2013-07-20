@@ -15,5 +15,9 @@
 *.exe
 *.out
 *.app
+
 bin/
 build/
+
+*.config
+!sample.config
