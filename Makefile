@@ -5,7 +5,7 @@ CC     := gcc
 BINARY := mcstatus-miner
 DEPS   := build/main.o build/debug.o build/config.o build/prober.o
 
-.PHONY: all clean
+.PHONY: all clean install
 
 all: build $(DEPS) bin/$(BINARY)
 
@@ -26,6 +26,9 @@ build/prober.o: src/prober.c include/prober.h
 
 bin/$(BINARY): $(DEPS)
 	$(CC) $(CFLAGS) $(INC) -o bin/$(BINARY) $(DEPS) $(LFLAGS)
+
+install:
+	cp -fv bin/$(BINARY) /usr/local/bin/$(BINARY)
 
 clean:
 	rm -rfv build bin

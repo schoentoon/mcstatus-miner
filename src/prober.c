@@ -20,6 +20,7 @@
 #include "debug.h"
 #include "config.h"
 
+#include <time.h>
 #include <ctype.h>
 #include <string.h>
 
@@ -158,6 +159,10 @@ int print_status(struct server_status* status, char* format, char* buf, size_t b
             buf++;
         } else if (strcmp(key, "maxplayers") == 0) {
           snprintf(buf, end - buf, "%d", status->maxplayers);
+          while (*buf != '\0')
+            buf++;
+        } else if (strcmp(key, "time") == 0) {
+          snprintf(buf, end - buf, "%ld", time(NULL));
           while (*buf != '\0')
             buf++;
         }
