@@ -168,8 +168,26 @@ int print_status(struct server_status* status, char* format, char* buf, size_t b
         }
       }
       f += strlen(key) - 1;
-    } else if (buf < end)
-      *buf++ = *f;
+    } else if (buf < end) {
+      if (*f == '\\') {
+        switch (*(++f)) {
+        case 'n':
+          *buf++ = '\n';
+          break;
+        case 'r':
+          *buf++ = '\r';
+          break;
+        case 't':
+          *buf++ = '\t';
+          break;
+        default:
+          *buf++ = '\\';
+          *buf++ = *f;
+          break;
+        }
+      } else
+        *buf++ = *f;
+    }
   };
   return buf - s;
 };
