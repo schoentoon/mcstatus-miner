@@ -83,7 +83,8 @@ int parse_config(char* filename) {
           return 0;
         }
         server->interval = interval;
-      }
+      } else if (strcmp(key, "unbuffered") == 0)
+        setvbuf (stdout, NULL, _IONBF, 0);
     }
   }
   return line_count;
