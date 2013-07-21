@@ -121,8 +121,11 @@ void readcb(struct bufferevent* conn, void* arg) {
     struct server* server = arg;
     status.server = server;
     char buf[BUFSIZ];
-    print_status(&status, server->format, buf, sizeof(buf));
-    printf("%s\n", buf);
+    size_t j;
+    for (j = 0; server->format[j]; j++) {
+      print_status(&status, server->format[j], buf, sizeof(buf));
+      printf("%s\n", buf);
+    }
   }
 error:
   eventcb(conn, BEV_FINISHED, arg);
@@ -189,5 +192,6 @@ int print_status(struct server_status* status, char* format, char* buf, size_t b
         *buf++ = *f;
     }
   };
+  *buf = '\0';
   return buf - s;
 };

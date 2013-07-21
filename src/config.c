@@ -65,8 +65,17 @@ int parse_config(char* filename) {
         server->interval = DEFAULT_INTERVAL;
         server->hostname = strdup(value);
       } else if (server && strcmp(key, "format") == 0) {
-        free(server->format);
-        server->format = strdup(value);
+        if (server->format == NULL) {
+          server->format = malloc(sizeof(char*) * 2);
+          bzero(server->format, sizeof(char*) * 2);
+          server->format[0] = strdup(value);
+        } else {
+          size_t i = 0;
+          while (server->format[++i]);
+          server->format = realloc(server->format, sizeof(char*) * (i + 2));
+          server->format[i] = strdup(value);
+          server->format[++i] = NULL;
+        }
       } else if (server && strcmp(key, "port") == 0) {
         errno = 0;
         long port = strtol(value, NULL, 10);
