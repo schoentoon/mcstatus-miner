@@ -75,13 +75,19 @@ void readcb(struct bufferevent* conn, void* arg) {
       goto error;
     char motdbuf[256];
     char *m = motdbuf;
+    unsigned char special = 0;
     for (; i < len; i++) {
       if (i % 2 == 0) {
         if (isascii(buffer[i])) {
-          *(m++) = buffer[i];
+          if (special)
+            special = 0;
+          else
+            *(m++) = buffer[i];
           if (buffer[i] == 0x00)
             break;
-        } else
+        } else if (buffer[i] == 0xa7)
+          special = 1;
+        else
           goto error;
       } else if (buffer[i] != 0x00)
         goto error;
