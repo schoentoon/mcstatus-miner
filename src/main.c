@@ -34,8 +34,8 @@ static const struct option g_LongOpts[] = {
   { 0, 0, 0, 0 }
 };
 
-static int usage() {
-  fprintf(stderr, "USAGE: scibf [options]\n");
+static int usage(char* program) {
+  fprintf(stderr, "USAGE: %s [options]\n", program);
   fprintf(stderr, "-h, --help\t\tShow this help message.\n");
   fprintf(stderr, "-D, --debug\t\tIncrease debug level.\n");
   fprintf(stderr, "\t\t\tYou can also directly set a certain debug level with -D5\n");
@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
   while ((arg = getopt_long(argc, argv, "hD::c:", g_LongOpts, &optindex)) != -1) {
     switch (arg) {
     case 'h':
-      return usage();
+      return usage(argv[0]);
     case 'D':
       if (optarg) {
         errno = 0;
