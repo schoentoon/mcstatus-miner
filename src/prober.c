@@ -59,9 +59,12 @@ void readcb(struct bufferevent* conn, void* arg) {
     struct server_status status;
     char versionbuf[64];
     char *v = versionbuf;
+    char *mv = versionbuf + sizeof(versionbuf);
     size_t i;
     for (i = 16; i < len; i++) {
       if (i % 2 == 0) {
+        if (v > mv)
+          goto error;
         if (isascii(buffer[i])) {
           *(v++) = buffer[i];
           if (buffer[i] == 0x00)
@@ -77,9 +80,12 @@ void readcb(struct bufferevent* conn, void* arg) {
       goto error;
     char motdbuf[256];
     char *m = motdbuf;
+    char *mm = motdbuf + sizeof(motdbuf);
     unsigned char special = 0;
     for (; i < len; i++) {
       if (i % 2 == 0) {
+        if (m > mm)
+          goto error;
         if (isascii(buffer[i])) {
           if (special)
             special = 0;
