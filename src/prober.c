@@ -44,6 +44,8 @@ void timer_callback(evutil_socket_t fd, short event, void* arg) {
   struct server* server = arg;
   struct bufferevent* conn = bufferevent_socket_new(event_base, -1, BEV_OPT_CLOSE_ON_FREE);
   bufferevent_setcb(conn, readcb, NULL, eventcb, arg);
+  static const struct timeval timeout = { 10, 0 };
+  bufferevent_set_timeouts(conn, &timeout, NULL);
   bufferevent_socket_connect_hostname(conn, dns, AF_INET, server->hostname, server->port);
   bufferevent_enable(conn, EV_READ);
   static const char HEADER[] = { 0xFE, 0x01 };
@@ -133,6 +135,7 @@ void readcb(struct bufferevent* conn, void* arg) {
       printf("%s\n", buf);
     }
   }
+  return;
 error:
   eventcb(conn, BEV_FINISHED, arg);
 };
