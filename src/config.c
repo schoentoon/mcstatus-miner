@@ -92,7 +92,9 @@ int parse_config(char* filename) {
           return 0;
         }
         server->interval = interval;
-      } else if (strcmp(key, "unbuffered") == 0)
+      } else if (server && strcmp(key, "longrequest") == 0)
+        server->long_request = 1;
+      else if (strcmp(key, "unbuffered") == 0)
         setvbuf (stdout, NULL, _IONBF, 0);
     }
   }

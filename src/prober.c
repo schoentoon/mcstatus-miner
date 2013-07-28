@@ -43,13 +43,33 @@ void timer_callback(evutil_socket_t fd, short event, void* arg) {
   DEBUG(255, "timer_callback(%d, %d, %p);", fd, event, arg);
   struct server* server = arg;
   struct bufferevent* conn = bufferevent_socket_new(event_base, -1, BEV_OPT_CLOSE_ON_FREE);
-  bufferevent_setcb(conn, readcb, NULL, eventcb, arg);
   static const struct timeval timeout = { 10, 0 };
   bufferevent_set_timeouts(conn, &timeout, NULL);
   bufferevent_socket_connect_hostname(conn, dns, AF_INET, server->hostname, server->port);
+  bufferevent_setcb(conn, readcb, NULL, eventcb, arg);
   bufferevent_enable(conn, EV_READ);
-  static const char HEADER[] = { 0xFE, 0x01 };
-  bufferevent_write(conn, HEADER, 2);
+  if (server->long_request == 0) {
+    static const unsigned char HEADER[] = { 0xFE, 0x01 };
+    bufferevent_write(conn, HEADER, (sizeof(HEADER) / sizeof(unsigned char)));
+  } else if (server->long_request == 1) {
+    static const unsigned char HEADER[] = { 0xFE, 0x01, 0xFA, 0x00, 0x0B, 0x00, 0x4D, 0x00, 0x43, 0x00
+                                          , 0x7C, 0x00, 0x50, 0x00, 0x69, 0x00, 0x6E, 0x00, 0x67, 0x00
+                                          , 0x48, 0x00, 0x6F, 0x00, 0x73, 0x00, 0x74, 0x00 };
+    bufferevent_write(conn, HEADER, (sizeof(HEADER) / sizeof(unsigned char)));
+    size_t hostlen = strlen(server->hostname);
+    unsigned short datlen = 7 + (hostlen * 2);
+    bufferevent_write(conn, &datlen, 2);
+    static const unsigned char PROTOCOL_VERSION[] = { 74 };
+    bufferevent_write(conn, PROTOCOL_VERSION, 1);
+    bufferevent_write(conn, &hostlen, 2);
+    size_t i;
+    for (i = 0; i < hostlen; i++) {
+      static const unsigned char null[] = { 0x00 };
+      bufferevent_write(conn, &server->hostname[i], 1);
+      bufferevent_write(conn, null, 1);
+    }
+    bufferevent_write(conn, &server->port, 4);
+  }
 };
 
 void readcb(struct bufferevent* conn, void* arg) {
