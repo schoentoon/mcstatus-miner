@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
         return 1;
       event_base = event_base_new();
       dispatch_once(event_base);
-      return event_base_dispatch(event_base);
+      return !event_base_dispatch(event_base);
     }
     }
   }
