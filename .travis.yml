@@ -6,8 +6,8 @@ before_install:
   - sudo apt-get update -qq >/dev/null 2>&1
   - sudo apt-get install -qq libevent-dev >/dev/null 2>&1
 script:
-  - make clean
   - make CC=$CC
+  - ./bin/mcstatus-miner -D255 -O test.config
 notifications:
   irc:
     channels:

@@ -40,4 +40,6 @@ int parse_config(char* filename);
 
 void dispatch_config(struct event_base* base);
 
+void dispatch_once(struct event_base* base);
+
 #endif //_CONFIG_H

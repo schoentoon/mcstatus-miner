@@ -44,7 +44,7 @@ void timer_callback(evutil_socket_t fd, short event, void* arg) {
   struct server* server = arg;
   struct bufferevent* conn = bufferevent_socket_new(event_base, -1, BEV_OPT_CLOSE_ON_FREE);
   static const struct timeval timeout = { 10, 0 };
-  bufferevent_set_timeouts(conn, &timeout, NULL);
+  bufferevent_set_timeouts(conn, &timeout, &timeout);
   bufferevent_socket_connect_hostname(conn, dns, AF_INET, server->hostname, server->port);
   bufferevent_setcb(conn, readcb, NULL, eventcb, arg);
   bufferevent_enable(conn, EV_READ);
@@ -167,9 +167,8 @@ error:
 };
 
 void eventcb(struct bufferevent* conn, short event, void* arg) {
-  if (event & BEV_EVENT_CONNECTED)
-    return;
-  bufferevent_free(conn);
+  if (event != BEV_EVENT_CONNECTED)
+    bufferevent_free(conn);
 };
 
 #define APPEND(/*char* */ str) \

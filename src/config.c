@@ -95,7 +95,7 @@ int parse_config(char* filename) {
       } else if (server && strcmp(key, "longrequest") == 0)
         server->long_request = 1;
       else if (strcmp(key, "unbuffered") == 0)
-        setvbuf (stdout, NULL, _IONBF, 0);
+        setvbuf(stdout, NULL, _IONBF, 0);
     }
   }
   return line_count;
@@ -110,6 +110,15 @@ void dispatch_config(struct event_base* base) {
     tv.tv_usec = 0;
     node->timer = event_new(base, -1, EV_PERSIST, timer_callback, node);
     event_add(node->timer, &tv);
+    node = node->next;
+  };
+};
+
+void dispatch_once(struct event_base* base) {
+  dns = NULL; /* Using a blocking dns here else it'll never quit :/ FIXME */
+  struct server* node = global_config.servers;
+  while (node) {
+    timer_callback(-1, 1, node);
     node = node->next;
   };
 };

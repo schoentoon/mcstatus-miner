@@ -21,3 +21,4 @@ build/
 
 *.config
 !sample.config
+!test.config

@@ -31,6 +31,7 @@ static const struct option g_LongOpts[] = {
   { "help",       no_argument,       0, 'h' },
   { "debug",      optional_argument, 0, 'D' },
   { "config",     required_argument, 0, 'c' },
+  { "once",       required_argument, 0, 'O' },
   { 0, 0, 0, 0 }
 };
 
@@ -39,13 +40,14 @@ static int usage(char* program) {
   fprintf(stderr, "-h, --help\t\tShow this help message.\n");
   fprintf(stderr, "-D, --debug\t\tIncrease debug level.\n");
   fprintf(stderr, "\t\t\tYou can also directly set a certain debug level with -D5\n");
-  fprintf(stderr, "-c, --config\t\tConfig file.\n");
+  fprintf(stderr, "-c, --config [config]\tConfig file.\n");
+  fprintf(stderr, "-O, --once [config]\tPull all the servers only once.\n");
   return 0;
 };
 
 int main(int argc, char** argv) {
   int arg, optindex;
-  while ((arg = getopt_long(argc, argv, "hD::c:", g_LongOpts, &optindex)) != -1) {
+  while ((arg = getopt_long(argc, argv, "hD::c:O:", g_LongOpts, &optindex)) != -1) {
     switch (arg) {
     case 'h':
       return usage(argv[0]);
@@ -64,6 +66,13 @@ int main(int argc, char** argv) {
       if (parse_config(optarg) == 0)
         return 1;
       break;
+    case 'O': {
+      if (parse_config(optarg) == 0)
+        return 1;
+      event_base = event_base_new();
+      dispatch_once(event_base);
+      return event_base_dispatch(event_base);
+    }
     }
   }
   event_base = event_base_new();
