@@ -1,6 +1,6 @@
 CFLAGS := $(CFLAGS) -Wall -O2 -mtune=native -g
 INC    := -Iinclude $(INC)
-LFLAGS := -levent
+LFLAGS := -levent -ljansson
 CC     := gcc
 BINARY := mcstatus-miner
 DEPS   := build/main.o build/debug.o build/config.o build/prober.o

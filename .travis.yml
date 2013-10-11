@@ -4,7 +4,7 @@ compiler:
   - clang
 before_install:
   - sudo apt-get update -qq >/dev/null 2>&1
-  - sudo apt-get install -qq libevent-dev >/dev/null 2>&1
+  - sudo apt-get install -qq libevent-dev libjansson-dev >/dev/null 2>&1
 script:
   - make CC=$CC
 notifications:

@@ -26,6 +26,8 @@
 
 #include <event2/bufferevent.h>
 
+#include <jansson.h>
+
 struct server_status {
   char* version;
   char* motd;
@@ -75,82 +77,26 @@ void readcb(struct bufferevent* conn, void* arg) {
   }
   if (start_json != NULL) {
     DEBUG(255, "%s", start_json);
+    json_t* json = json_loads(start_json, 0, NULL);
     struct server_status status;
-    /*char versionbuf[64]; //TODO Rewrite this to use the incoming json
-    char *v = versionbuf;
-    char *mv = versionbuf + sizeof(versionbuf);
-    size_t i;
-    for (i = 16; i < len; i++) {
-      if (i % 2 == 0) {
-        if (v > mv)
-          goto error;
-        if (isascii(buffer[i])) {
-          *(v++) = buffer[i];
-          if (buffer[i] == 0x00)
-            break;
-        } else
-          goto error;
-      } else if (buffer[i] != 0x00)
-        goto error;
+    json_t* json_description = json_object_get(json, "description");
+    if (json_description)
+      status.motd = (char*) json_string_value(json_description);
+    json_t* json_version = json_object_get(json, "version");
+    if (json_version) {
+      json_t* version_name = json_object_get(json_version, "name");
+      if (version_name)
+        status.version = (char*) json_string_value(version_name);
     }
-    status.version = versionbuf;
-    DEBUG(255, "Version: %s", status.version);
-    if (buffer[++i] != 0 && buffer[++i] != 0 && buffer[++i] != 0)
-      goto error;
-    char motdbuf[256];
-    char *m = motdbuf;
-    char *mm = motdbuf + sizeof(motdbuf);
-    unsigned char special = 0;
-    for (; i < len; i++) {
-      if (i % 2 == 0) {
-        if (m > mm)
-          goto error;
-        if (isascii(buffer[i])) {
-          if (special)
-            special = 0;
-          else
-            *(m++) = buffer[i];
-          if (buffer[i] == 0x00)
-            break;
-        } else if (buffer[i] == 0xa7)
-          special = 1;
-        else
-          goto error;
-      } else if (buffer[i] != 0x00)
-        goto error;
+    json_t* json_players = json_object_get(json, "players");
+    if (json_players) {
+      json_t* max = json_object_get(json_players, "max");
+      if (max)
+        status.maxplayers = json_integer_value(max);
+      json_t* online = json_object_get(json_players, "online");
+      if (online)
+        status.numplayers = json_integer_value(online);
     }
-    status.motd = motdbuf;
-    DEBUG(255, "Motd: %s", status.motd);
-    if (buffer[++i] != 0 && buffer[++i] != 0 && buffer[++i] != 0)
-      goto error;
-    status.numplayers = 0;
-    for (; i < len; i++) {
-      if (i % 2 == 0) {
-        if (isdigit(buffer[i]))
-          status.numplayers = (status.numplayers * 10) + (buffer[i] - '0');
-        else if (buffer[i] == 0x00)
-          break;
-        else
-          goto error;
-      } else if (buffer[i] != 0x00)
-        goto error;
-    }
-    DEBUG(255, "Number of online players: %d", status.numplayers);
-    if (buffer[++i] != 0 && buffer[++i] != 0 && buffer[++i] != 0)
-      goto error;
-    status.maxplayers = 0;
-    for (; i < len; i++) {
-      if (i % 2 == 0) {
-        if (isdigit(buffer[i]))
-          status.maxplayers = (status.maxplayers * 10) + (buffer[i] - '0');
-        else if (buffer[i] == 0x00)
-          break;
-        else
-          goto error;
-      } else if (buffer[i] != 0x00)
-        goto error;
-    }
-    DEBUG(255, "Maximum amount of players: %d", status.maxplayers);*/
     struct server* server = arg;
     status.server = server;
     char buf[BUFSIZ];
@@ -159,9 +105,8 @@ void readcb(struct bufferevent* conn, void* arg) {
       print_status(&status, server->format[j], buf, sizeof(buf));
       printf("%s\n", buf);
     }
+    json_decref(json);
   }
-  return;
-error:
   eventcb(conn, BEV_FINISHED, arg);
 };
 
