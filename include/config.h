@@ -31,6 +31,7 @@ struct server {
   unsigned short port;
   unsigned short interval;
   char** format;
+  char** players;
   struct event* timer;
   struct server* next;
 };

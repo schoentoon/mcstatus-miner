@@ -40,6 +40,7 @@ void readcb(struct bufferevent* conn, void* arg);
 void eventcb(struct bufferevent* conn, short event, void* arg);
 
 int print_status(struct server_status* status, char* format, char* buf, size_t buflen);
+int print_player(json_t* player, char* format, char* buf, size_t buflen);
 
 void timer_callback(evutil_socket_t fd, short event, void* arg) {
   DEBUG(255, "timer_callback(%d, %d, %p);", fd, event, arg);
@@ -76,7 +77,10 @@ void readcb(struct bufferevent* conn, void* arg) {
     }
   }
   if (start_json != NULL) {
-    DEBUG(255, "%s", start_json);
+    char buf[BUFSIZ];
+    size_t j;
+    struct server* server = arg;
+    DEBUG(255, "raw json: %s", start_json);
     json_t* json = json_loads(start_json, 0, NULL);
     struct server_status status;
     json_t* json_description = json_object_get(json, "description");
@@ -96,14 +100,25 @@ void readcb(struct bufferevent* conn, void* arg) {
       json_t* online = json_object_get(json_players, "online");
       if (online)
         status.numplayers = json_integer_value(online);
+      if (server->players) {
+        json_t* json_sample = json_object_get(json_players, "sample");
+        if (json_sample) {
+          for (i = 0; i < json_array_size(json_sample); i++) {
+            json_t* player = json_array_get(json_sample, i);
+            if (player) {
+              for (j = 0; server->players[j]; j++) {
+                if (print_player(player, server->players[j], buf, sizeof(buf)))
+                  printf("%s\n", buf);
+              }
+            }
+          }
+        }
+      }
     }
-    struct server* server = arg;
     status.server = server;
-    char buf[BUFSIZ];
-    size_t j;
     for (j = 0; server->format[j]; j++) {
-      print_status(&status, server->format[j], buf, sizeof(buf));
-      printf("%s\n", buf);
+      if (print_status(&status, server->format[j], buf, sizeof(buf)))
+        printf("%s\n", buf);
     }
     json_decref(json);
   }
@@ -115,9 +130,11 @@ void eventcb(struct bufferevent* conn, short event, void* arg) {
     bufferevent_free(conn);
 };
 
-#define APPEND(/*char* */ str) \
-    while (*str && buf < end) \
-      *buf++ = *str++;
+#define APPEND(/*char* */ str) { \
+      char* tmp = str; \
+      while (*tmp && buf < end) \
+        *buf++ = *tmp++; \
+    }
 
 int print_status(struct server_status* status, char* format, char* buf, size_t buflen) {
   char* s = buf;
@@ -172,4 +189,47 @@ int print_status(struct server_status* status, char* format, char* buf, size_t b
   };
   *buf = '\0';
   return buf - s;
+};
+
+int print_player(json_t* player, char* format, char* buf, size_t buflen) {
+  char* s = buf;
+  char* end = s + buflen;
+  char* f;
+  json_t* name = json_object_get(player, "name");
+  if (name) {
+    for (f = format; *f != '\0'; f++) {
+      if (*f == '%') {
+        f++;
+        char key[33];
+        if (sscanf(f, "%32[a-z]", key) == 1) {
+          if (strcmp(key, "name") == 0) {
+            APPEND((char*) json_string_value(name));
+          }
+        }
+        f += strlen(key) - 1;
+      } else if (buf < end) {
+        if (*f == '\\') {
+          switch (*(++f)) {
+          case 'n':
+            *buf++ = '\n';
+            break;
+          case 'r':
+            *buf++ = '\r';
+            break;
+          case 't':
+            *buf++ = '\t';
+            break;
+          default:
+            *buf++ = '\\';
+            *buf++ = *f;
+            break;
+          }
+        } else
+          *buf++ = *f;
+      }
+    };
+    *buf = '\0';
+    return buf - s;
+  }
+  return 0;
 };

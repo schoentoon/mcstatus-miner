@@ -76,6 +76,18 @@ int parse_config(char* filename) {
           server->format[i] = strdup(value);
           server->format[++i] = NULL;
         }
+      } else if (server && strcmp(key, "players_format") == 0) {
+        if (server->players == NULL) {
+          server->players = malloc(sizeof(char*) * 2);
+          bzero(server->players, sizeof(char*) * 2);
+          server->players[0] = strdup(value);
+        } else {
+          size_t i = 0;
+          while (server->players[++i]);
+          server->players = realloc(server->players, sizeof(char*) * (i + 2));
+          server->players[i] = strdup(value);
+          server->players[++i] = NULL;
+        }
       } else if (server && strcmp(key, "port") == 0) {
         errno = 0;
         long port = strtol(value, NULL, 10);
