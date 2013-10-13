@@ -126,6 +126,7 @@ void readcb(struct bufferevent* conn, void* arg) {
 };
 
 void eventcb(struct bufferevent* conn, short event, void* arg) {
+  DEBUG(255, "eventcb(%p, %d, %p);", conn, event, arg);
   if (event != BEV_EVENT_CONNECTED)
     bufferevent_free(conn);
 };
@@ -196,7 +197,8 @@ int print_player(json_t* player, char* format, char* buf, size_t buflen) {
   char* end = s + buflen;
   char* f;
   json_t* name = json_object_get(player, "name");
-  if (name) {
+  json_t* id = json_object_get(player, "id");
+  if (name && id) {
     for (f = format; *f != '\0'; f++) {
       if (*f == '%') {
         f++;
@@ -204,6 +206,8 @@ int print_player(json_t* player, char* format, char* buf, size_t buflen) {
         if (sscanf(f, "%32[a-z]", key) == 1) {
           if (strcmp(key, "name") == 0) {
             APPEND((char*) json_string_value(name));
+          } else if (strcmp(key, "id") == 0) {
+            APPEND((char*) json_string_value(id));
           }
         }
         f += strlen(key) - 1;
