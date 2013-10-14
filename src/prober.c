@@ -40,7 +40,7 @@ void readcb(struct bufferevent* conn, void* arg);
 void eventcb(struct bufferevent* conn, short event, void* arg);
 
 int print_status(struct server_status* status, char* format, char* buf, size_t buflen);
-int print_player(json_t* player, char* format, char* buf, size_t buflen);
+int print_player(struct server_status* status, json_t* player, char* format, char* buf, size_t buflen);
 
 void timer_callback(evutil_socket_t fd, short event, void* arg) {
   DEBUG(255, "timer_callback(%d, %d, %p);", fd, event, arg);
@@ -80,9 +80,10 @@ void readcb(struct bufferevent* conn, void* arg) {
     char buf[BUFSIZ];
     size_t j;
     struct server* server = arg;
+    struct server_status status;
     DEBUG(255, "raw json: %s", start_json);
     json_t* json = json_loads(start_json, 0, NULL);
-    struct server_status status;
+    status.server = server;
     json_t* json_description = json_object_get(json, "description");
     if (json_description)
       status.motd = (char*) json_string_value(json_description);
@@ -107,7 +108,7 @@ void readcb(struct bufferevent* conn, void* arg) {
             json_t* player = json_array_get(json_sample, i);
             if (player) {
               for (j = 0; server->players[j]; j++) {
-                if (print_player(player, server->players[j], buf, sizeof(buf)))
+                if (print_player(&status, player, server->players[j], buf, sizeof(buf)))
                   printf("%s\n", buf);
               }
             }
@@ -115,7 +116,6 @@ void readcb(struct bufferevent* conn, void* arg) {
         }
       }
     }
-    status.server = server;
     for (j = 0; server->format[j]; j++) {
       if (print_status(&status, server->format[j], buf, sizeof(buf)))
         printf("%s\n", buf);
@@ -192,7 +192,7 @@ int print_status(struct server_status* status, char* format, char* buf, size_t b
   return buf - s;
 };
 
-int print_player(json_t* player, char* format, char* buf, size_t buflen) {
+int print_player(struct server_status* status, json_t* player, char* format, char* buf, size_t buflen) {
   char* s = buf;
   char* end = s + buflen;
   char* f;
@@ -208,6 +208,24 @@ int print_player(json_t* player, char* format, char* buf, size_t buflen) {
             APPEND((char*) json_string_value(name));
           } else if (strcmp(key, "id") == 0) {
             APPEND((char*) json_string_value(id));
+          } else if (strcmp(key, "hostname") == 0) {
+            APPEND(status->server->hostname);
+          } else if (strcmp(key, "version") == 0) {
+            APPEND(status->version);
+          } else if (strcmp(key, "motd") == 0) {
+            APPEND(status->motd);
+          } else if (strcmp(key, "numplayers") == 0) {
+            snprintf(buf, end - buf, "%d", status->numplayers);
+            while (*buf != '\0')
+              buf++;
+          } else if (strcmp(key, "maxplayers") == 0) {
+            snprintf(buf, end - buf, "%d", status->maxplayers);
+            while (*buf != '\0')
+              buf++;
+          } else if (strcmp(key, "time") == 0) {
+            snprintf(buf, end - buf, "%ld", time(NULL));
+            while (*buf != '\0')
+              buf++;
           }
         }
         f += strlen(key) - 1;
