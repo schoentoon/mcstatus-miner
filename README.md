@@ -10,6 +10,11 @@ The config looks fairly simple as you can see in sample.config, looking at this 
 * %maxplayers The maximum amount of players
 * %time A unix timestamp
 
+As of 13w41a we can also receive a sample of online players, mcstatus-miner now supports this as well. As you can see in sample.config you just add a players_format, which will get printed for every player. There are 2 possible parameters next to all the ones listed above.
+
+* %name The name of the player
+* %id I honestly have no idea what this is, but it is returned with each player so we support it.
+
 This format will be printed to stdout on every sucessful reply, which should happend every *interval* seconds. It should be fairly each to simply pipe this directly into another program. Below is an example.
 
 Collectd
